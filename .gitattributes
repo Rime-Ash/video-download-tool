@@ -1,0 +1,24 @@
+# Normalize text files to LF in the repository, keep Windows scripts runnable as CRLF.
+* text=auto eol=lf
+
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+gradlew text eol=lf
+
+# Source and documents are UTF-8 (declared in .editorconfig); normalize line endings only.
+*.java   text
+*.gradle text
+*.md     text
+*.xml    text
+
+# Binary assets that must never be normalized or diffed as text.
+*.jar   binary
+*.exe   binary
+*.dll   binary
+*.ico   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.dat   binary
+*.bin   binary

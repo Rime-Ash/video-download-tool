@@ -1,0 +1,38 @@
+# Build output
+build/
+project/*/build/
+.gradle/
+packaging/windows/output/
+
+# Local toolchains and IDE metadata
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Local runtime data (configuration, logs, cookie exports) must never be committed
+config.json
+logs/
+*.log
+cookies*.txt
+*cookie*.json
+
+# Compiled helper classes
+utils/verify-parse/classes/
+
+# Local shims that contain absolute machine paths
+*.lnk
+*.bat.local
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.orig
+
+# Third-party executables are supplied locally; only the provenance record is tracked
+tools/*.exe
+tools/*.zip

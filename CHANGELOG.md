@@ -26,6 +26,11 @@ All notable changes to this project are documented in this file. The format foll
 - Re-verified the source tree, documentation, scripts and packaged image for personal data (user name, host
   name, local absolute paths, account identifiers, exported cookies). None were found.
 
+### Removed
+
+- Vestigial placeholder directories `database/` (the application uses no database) and the empty root
+  `downloads/` directory. The related checks in `utils/verify-project.ps1` were removed with them.
+
 ## [0.1.0] - 2026-09-27
 
 ### Added

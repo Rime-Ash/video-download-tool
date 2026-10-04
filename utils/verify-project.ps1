@@ -22,7 +22,6 @@ $requiredDirectories = @(
     'prototype',
     'project/frontend',
     'project/backend',
-    'database',
     'utils',
     'tools',
     'packaging'
@@ -73,7 +72,7 @@ $forbiddenNamePatterns = @(
     '*.zip'
 )
 
-$scanRoots = @('doc', 'prototype', 'project', 'database', 'utils', 'tools', 'packaging')
+$scanRoots = @('doc', 'prototype', 'project', 'utils', 'tools', 'packaging')
 foreach ($root in $scanRoots) {
     if (-not (Test-Path $root -PathType Container)) { continue }
     foreach ($pattern in $forbiddenNamePatterns) {

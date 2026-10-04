@@ -22,7 +22,6 @@
 │   └── frontend/             JavaFX 界面与组合根
 ├── doc/                      架构、安全、打包、进度与本文件
 ├── prototype/                产品原型材料
-├── database/                 保留目录，本项目不使用数据库
 ├── utils/                    构建、校验、图标与手工验证脚本
 ├── tools/                    本地 yt-dlp.exe / ffmpeg.exe（不提交，只提交 README.md 溯源记录）
 └── packaging/                Windows 打包脚本、图标与输出目录
@@ -138,5 +137,6 @@ Cookie 文件只被就地引用（`--cookies`），不复制、不打印、不�
 | --- | --- | --- |
 | 自有许可证 | 已确定为 MIT，与账号其他仓库一致；著作权人 `3447347190` | 已确认 |
 | FFmpeg 许可证 | 现附带 GPL-3.0 构建；若不便履行源码提供义务，应改用 LGPL 构建 | 待确认 |
-| `database/` 目录 | 项目不使用数据库，仅作占位；如无需保留可连同 `verify-project.ps1` 的检查项一并删除 | 保留 |
-| 根目录 `downloads/` | 空目录，与默认下载目录无关；可删除 | 保留 |
+
+已删除的占位目录：`database/`（项目不使用数据库）与根目录 `downloads/`（空目录，与默认下载目录
+`%USERPROFILE%/Downloads/VideoDownloader/` 无关）。二者的检查项已从 `utils/verify-project.ps1` 移除。

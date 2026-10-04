@@ -131,6 +131,6 @@ yt-dlp JSON 解析、进度解析、输出文件定位、失败重试与退避�
   打包镜像内无 config.json、logs、Cookie 或用户下载内容
 ```
 
-许可证已按账号其他仓库的约定确定为 MIT（`Copyright (c) 2026 3447347190`）。其余待确认事项记录在
-`doc/repository-standard.md` 第 10 节：FFmpeg 的 GPL 构建义务（或改用 LGPL 构建）、`database/` 与根目录
-`downloads/` 是否保留。
+许可证已按账号其他仓库的约定确定为 MIT（`Copyright (c) 2026 3447347190`）。占位目录 `database/` 与空的
+根目录 `downloads/` 已删除。其余待确认事项记录在 `doc/repository-standard.md` 第 10 节：FFmpeg 的 GPL
+构建义务（或改用 LGPL 构建）。

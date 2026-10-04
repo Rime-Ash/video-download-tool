@@ -40,7 +40,6 @@ doc/                    Architecture, security, packaging and file-standard docu
 prototype/              Product prototype material
 project/frontend/       JavaFX application module
 project/backend/        Models, services, engines, utilities, exceptions
-database/               Reserved; no database is used
 utils/                  Build, verification and file-standard scripts
 tools/                  Local yt-dlp.exe / ffmpeg.exe (never committed; provenance in tools/README.md)
 packaging/              Windows packaging documentation and scripts

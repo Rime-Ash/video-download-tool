@@ -16,3 +16,19 @@ The script creates an application image under `packaging/windows/output/VideoDow
 
 `LICENSE` and `THIRD-PARTY-NOTICES.md` are copied into the image root so the redistributed application carries
 its own license and third-party notices.
+
+## Installer
+
+`utils\build-installer.ps1` builds the application image and then compiles a single-file Windows installer with
+Inno Setup (`packaging\windows\installer.iss`):
+
+```powershell
+.\utils\build-installer.ps1
+.\utils\build-installer.ps1 -OutputDirectory 'D:\Download'
+.\utils\build-installer.ps1 -SkipAppImage
+```
+
+The installer shows a destination-directory page, offers a desktop shortcut checkbox (checked by default), and
+registers an uninstaller in "Apps & features" (also available as `unins000.exe` inside the install directory).
+Output defaults to `D:\Download\VideoDownloader-<version>-win64-setup.exe`; the Inno Setup compiler is expected
+at `C:\tools\Inno\ISCC.exe` and can be overridden with `-IsccPath`.

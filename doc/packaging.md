@@ -43,3 +43,27 @@ The current build is an application image. A future release can replace `--type 
 The packaged entry point is `com.nzsk.videodownloader.ui.VideoDownloaderLauncher`, a plain class that calls the
 JavaFX application. The JVM rejects a main class that extends `javafx.application.Application` when JavaFX is
 placed on the classpath (as `jpackage` does for a non-modular image), so the launcher class is required.
+
+## Installer
+
+`utils/build-installer.ps1` wraps the application image in a single-file installer compiled by Inno Setup from
+`packaging/windows/installer.iss`. The installer is the recommended distribution format for end users: it
+creates the application directories, shows a destination-directory page, offers a desktop shortcut task that
+cannot be forced on the user, writes a Start Menu entry, and registers an uninstaller with Windows.
+
+Installer properties:
+
+```text
+AppId            fixed GUID, so upgrades replace an existing installation instead of stacking up
+DefaultDirName   {autopf}\Video Downloader   (per-machine, requires elevation)
+Privileges       admin
+Wizard pages     destination directory + additional tasks (desktop shortcut)
+Uninstall        registered in "Apps & features"; unins000.exe inside the install directory
+Output           <OutputDirectory>\VideoDownloader-<version>-win64-setup.exe
+```
+
+By default the script writes the installer to `D:\Download`. Override with `-OutputDirectory`, reuse an existing
+application image with `-SkipAppImage`, or point at another Inno Setup compiler with `-IsccPath`.
+
+The installer is not code signed. Windows SmartScreen will therefore warn on first run until the project owner
+obtains an Authenticode certificate and signs the executable.

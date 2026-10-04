@@ -20,6 +20,9 @@ All notable changes to this project are documented in this file. The format foll
 - `CHANGELOG.md`, `.gitattributes` and `.editorconfig`.
 - `utils/verify-project.ps1` now verifies the standard layout and rejects privacy hazards such as committed
   configuration, logs, cookie exports and local absolute paths.
+- Windows installer build: `packaging/windows/installer.iss` plus `utils/build-installer.ps1`, producing a
+  single-file Inno Setup installer with a destination-directory page, an optional desktop shortcut and a
+  registered uninstaller.
 
 ### Security
 

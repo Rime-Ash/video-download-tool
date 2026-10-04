@@ -64,14 +64,9 @@ if (-not (Test-Path $installDirectory -PathType Container)) {
 }
 Copy-Item (Join-Path $installDirectory '*') $inputDirectory -Recurse -Force
 
-if (Test-Path (Join-Path $toolsDirectory 'yt-dlp.exe')) {
-    New-Item (Join-Path $inputDirectory 'tools') -ItemType Directory -Force | Out-Null
-    Copy-Item (Join-Path $toolsDirectory 'yt-dlp.exe') (Join-Path $inputDirectory 'tools\yt-dlp.exe') -Force
-}
-if (Test-Path (Join-Path $toolsDirectory 'ffmpeg.exe')) {
-    New-Item (Join-Path $inputDirectory 'tools') -ItemType Directory -Force | Out-Null
-    Copy-Item (Join-Path $toolsDirectory 'ffmpeg.exe') (Join-Path $inputDirectory 'tools\ffmpeg.exe') -Force
-}
+# Do NOT copy the tools into the jpackage input directory: that would create a second copy under
+# app/tools which the application finds first and which users never see. The tools are copied once,
+# next to the launcher, after packaging (see the end of this script).
 
 & $javaLinkTool `
     '--add-modules' 'java.base,java.desktop,java.logging,java.management,java.naming,java.net.http,jdk.crypto.ec,jdk.unsupported' `
@@ -104,7 +99,9 @@ if ($LASTEXITCODE -ne 0) {
     throw 'jpackage app-image creation failed.'
 }
 
-# Also expose the tools next to the launcher so that users can drop updated binaries there.
+# Copies the tools next to the launcher. This is the only copy inside the application image: the
+# application searches upward from app/lib, so <image>\tools is the directory it resolves, and
+# replacing the files here takes effect immediately.
 if (Test-Path (Join-Path $toolsDirectory 'yt-dlp.exe')) {
     New-Item (Join-Path $outputDirectory 'VideoDownloader\tools') -ItemType Directory -Force | Out-Null
     Copy-Item (Join-Path $toolsDirectory 'yt-dlp.exe') (Join-Path $outputDirectory 'VideoDownloader\tools\yt-dlp.exe') -Force

@@ -9,6 +9,9 @@ All notable changes to this project are documented in this file. The format foll
 
 - The compliance statement is no longer a startup confirmation dialog. It is shown permanently in the
   settings tab, below the environment check, and the application opens the main window directly.
+- The application image now keeps a single copy of yt-dlp and FFmpeg, in `<application>/tools` next to the
+  launcher. The redundant `app/tools` copy was removed, cutting the installed footprint from about 439 MB to
+  about 265 MB and the installer from about 150 MB to about 90 MB.
 - License changed from a proprietary placeholder to the MIT license (`Copyright (c) 2026 3447347190`), matching
   the convention of the account's other public repositories.
 

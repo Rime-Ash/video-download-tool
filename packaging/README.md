@@ -14,6 +14,10 @@ Temurin / Microsoft OpenJDK directories. No machine-specific path is hard-coded.
 
 The script creates an application image under `packaging/windows/output/VideoDownloader`. It copies `tools/yt-dlp.exe` and `tools/ffmpeg.exe` only when those files exist; unknown or unrecorded binaries are never downloaded automatically.
 
+The tools are copied once, to `<image>/tools` next to the launcher — not into `app/`. Dropping a newer
+`yt-dlp.exe` into that directory (the installed `tools` folder) is therefore enough to switch the executable
+the application uses.
+
 `LICENSE` and `THIRD-PARTY-NOTICES.md` are copied into the image root so the redistributed application carries
 its own license and third-party notices.
 

@@ -1,11 +1,15 @@
 package com.nzsk.videodownloader.service;
 
 import com.nzsk.videodownloader.engine.DownloadHandle;
+import com.nzsk.videodownloader.engine.DouyinVideoClient;
 import com.nzsk.videodownloader.engine.ImagePostClient;
 import com.nzsk.videodownloader.engine.ProgressListener;
 import com.nzsk.videodownloader.engine.YtDlpClient;
 import com.nzsk.videodownloader.exception.DownloadException;
 import com.nzsk.videodownloader.exception.ImagePostException;
+import com.nzsk.videodownloader.model.DouyinVideoFormat;
+import com.nzsk.videodownloader.model.DouyinVideoInfo;
+import com.nzsk.videodownloader.model.DouyinVideoRequest;
 import com.nzsk.videodownloader.model.DownloadOptions;
 import com.nzsk.videodownloader.model.DownloadProgress;
 import com.nzsk.videodownloader.model.DownloadRequest;
@@ -201,6 +205,101 @@ class DownloadQueueTest {
                         new ImageInfo("https://p3-pc-sign.douyinpic.com/b.jpeg", "jpg", 1920, 1080)),
                 directory,
                 null);
+    }
+
+    @Test
+    void completesDouyinFallbackTaskAndReportsFile() throws Exception {
+        var directory = Files.createTempDirectory("video-downloader-queue-douyin");
+        var douyinClient = new FakeDouyinVideoClient(directory);
+        var queue = newQueue(new FakeClient(new CountDownLatch(1), true), 1,
+                new RetryService(1, ignored -> { }));
+        queue.setDouyinVideoClient(douyinClient);
+        var task = queue.addDouyinVideoTask(douyinVideoRequest(directory));
+
+        queue.start(task.id());
+
+        awaitState(queue, task.id(), DownloadState.COMPLETED);
+        var completed = queue.get(task.id()).orElseThrow();
+        assertEquals("本地视频.mp4", completed.fileName());
+        assertEquals("浏览器解析（CDN 直链）", completed.summary());
+        assertEquals(directory.resolve("本地视频.mp4").toAbsolutePath().normalize(),
+                completed.outputFile());
+        queue.close();
+        douyinClient.close();
+    }
+
+    @Test
+    void rejectsDouyinTaskWhenTheFallbackIsNotConfigured() throws Exception {
+        var directory = Files.createTempDirectory("video-downloader-queue-douyin-none");
+        var queue = newQueue(new FakeClient(new CountDownLatch(1), true), 1,
+                new RetryService(1, ignored -> { }));
+
+        assertThrows(IllegalStateException.class,
+                () -> queue.addDouyinVideoTask(douyinVideoRequest(directory)));
+        queue.close();
+    }
+
+    private static DouyinVideoRequest douyinVideoRequest(Path directory) {
+        return new DouyinVideoRequest(
+                new ValidatedUrl(URI.create("https://www.douyin.com/video/7300000000000000000"),
+                        "www.douyin.com"),
+                "7300000000000000000",
+                "本地视频",
+                new DouyinVideoFormat(
+                        "源 1", "https://v26-web.douyinvod.com/x/video/tos/cn/y/", "mp4",
+                        "浏览器解析（CDN 直链）"),
+                directory,
+                null);
+    }
+
+    /** Douyin fallback downloads are exercised by DefaultDouyinVideoClientTest; only the queue matters. */
+    private static final class FakeDouyinVideoClient implements DouyinVideoClient, AutoCloseable {
+        private final Path directory;
+
+        private FakeDouyinVideoClient(Path directory) {
+            this.directory = directory;
+        }
+
+        @Override
+        public DouyinVideoInfo inspect(ValidatedUrl url, Path cookieFile) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public DownloadHandle download(DouyinVideoRequest request, ProgressListener progressListener)
+                throws DownloadException {
+            Path output = directory.resolve(request.baseFileName() + ".mp4")
+                    .toAbsolutePath().normalize();
+            progressListener.onProgress(new DownloadProgress(
+                    50, "1 MiB", "1 MiB/s", "00:01", DownloadState.DOWNLOADING));
+            return new DownloadHandle() {
+                @Override
+                public void pause() {
+                }
+
+                @Override
+                public void cancel() {
+                }
+
+                @Override
+                public void awaitCompletion() {
+                }
+
+                @Override
+                public boolean succeeded() {
+                    return true;
+                }
+
+                @Override
+                public Optional<Path> outputFile() {
+                    return Optional.of(output);
+                }
+            };
+        }
+
+        @Override
+        public void close() {
+        }
     }
 
     /** Image post downloads are exercised by DefaultImagePostClientTest; here only the queue matters. */

@@ -2,11 +2,14 @@ package com.nzsk.videodownloader.service;
 
 import com.nzsk.videodownloader.engine.DownloadHandle;
 import com.nzsk.videodownloader.engine.DownloadJob;
+import com.nzsk.videodownloader.engine.DouyinVideoClient;
+import com.nzsk.videodownloader.engine.DouyinVideoDownloadJob;
 import com.nzsk.videodownloader.engine.ImagePostClient;
 import com.nzsk.videodownloader.engine.ImagePostDownloadJob;
 import com.nzsk.videodownloader.engine.VideoDownloadJob;
 import com.nzsk.videodownloader.engine.YtDlpClient;
 import com.nzsk.videodownloader.exception.DownloadException;
+import com.nzsk.videodownloader.model.DouyinVideoRequest;
 import com.nzsk.videodownloader.model.DownloadProgress;
 import com.nzsk.videodownloader.model.DownloadRequest;
 import com.nzsk.videodownloader.model.DownloadState;
@@ -43,6 +46,7 @@ public final class DownloadQueue implements DownloadService, AutoCloseable {
 
     private YtDlpClient ytDlpClient;
     private ImagePostClient imagePostClient;
+    private DouyinVideoClient douyinVideoClient;
     private int maxConcurrentDownloads;
     private int activeDownloads;
 
@@ -68,6 +72,14 @@ public final class DownloadQueue implements DownloadService, AutoCloseable {
         this.imagePostClient = Objects.requireNonNull(client, "imagePostClient");
     }
 
+    /**
+     * Registers the Douyin browser fallback. It stays optional so that a queue can be tested with only the
+     * clients a scenario needs.
+     */
+    public void setDouyinVideoClient(DouyinVideoClient client) {
+        this.douyinVideoClient = client;
+    }
+
     @Override
     public void setMaxConcurrentDownloads(int maxConcurrentDownloads) {
         if (maxConcurrentDownloads < 1) {
@@ -89,6 +101,16 @@ public final class DownloadQueue implements DownloadService, AutoCloseable {
     public DownloadTask addImagePostTask(ImagePostRequest request) {
         Objects.requireNonNull(request, "request");
         return enqueue(new ImagePostDownloadJob(imagePostClient, request), DownloadTaskKind.IMAGE_POST);
+    }
+
+    /** Queues a video that was resolved by the Douyin browser fallback instead of yt-dlp. */
+    public DownloadTask addDouyinVideoTask(DouyinVideoRequest request) {
+        Objects.requireNonNull(request, "request");
+        DouyinVideoClient client = douyinVideoClient;
+        if (client == null) {
+            throw new IllegalStateException("抖音兜底下载未配置。");
+        }
+        return enqueue(new DouyinVideoDownloadJob(client, request), DownloadTaskKind.DOUYIN_VIDEO);
     }
 
     private DownloadTask enqueue(DownloadJob job, DownloadTaskKind kind) {

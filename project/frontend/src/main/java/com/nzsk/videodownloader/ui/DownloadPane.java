@@ -7,6 +7,9 @@ import com.nzsk.videodownloader.model.DownloadRequest;
 import com.nzsk.videodownloader.model.DownloadState;
 import com.nzsk.videodownloader.model.DownloadTask;
 import com.nzsk.videodownloader.model.DownloadTaskId;
+import com.nzsk.videodownloader.model.DouyinVideoFormat;
+import com.nzsk.videodownloader.model.DouyinVideoInfo;
+import com.nzsk.videodownloader.model.DouyinVideoRequest;
 import com.nzsk.videodownloader.model.FormatInfo;
 import com.nzsk.videodownloader.model.ImageInfo;
 import com.nzsk.videodownloader.model.ImagePostInfo;
@@ -87,6 +90,8 @@ final class DownloadPane {
     private ValidatedUrl validatedUrl;
     private VideoInfo videoInfo;
     private ImagePostInfo imagePostInfo;
+    private DouyinVideoInfo douyinVideoInfo;
+    private List<DouyinVideoFormat> douyinFormats = List.of();
 
     DownloadPane(Stage owner, AppContext context) {
         Objects.requireNonNull(owner, "owner");
@@ -163,7 +168,7 @@ final class DownloadPane {
         extensionColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().extension()));
         TableColumn<FormatInfo, String> resolutionColumn = new TableColumn<>("分辨率");
         resolutionColumn.setCellValueFactory(data -> new SimpleStringProperty(
-                data.getValue().height() == null ? "仅音频" : data.getValue().height() + "p"));
+                resolutionText(data.getValue())));
         TableColumn<FormatInfo, String> codecColumn = new TableColumn<>("编码");
         codecColumn.setCellValueFactory(data -> new SimpleStringProperty(
                 UiFormatters.unknownIfBlank(data.getValue().videoCodec())
@@ -277,8 +282,14 @@ final class DownloadPane {
             validatedUrl = inspected.url();
             videoInfo = inspected.inspection().video();
             imagePostInfo = inspected.inspection().imagePost();
+            douyinVideoInfo = inspected.inspection().douyinVideo();
+            if (douyinVideoInfo == null) {
+                douyinFormats = List.of();
+            }
             if (videoInfo != null) {
                 showVideoInfo(videoInfo);
+            } else if (douyinVideoInfo != null) {
+                showDouyinVideoInfo(douyinVideoInfo);
             } else {
                 showImagePostInfo(imagePostInfo);
             }
@@ -286,6 +297,10 @@ final class DownloadPane {
             if (rawUrl != null && !normalizedUrl.equalsIgnoreCase(rawUrl.trim())) {
                 statusLabel.setText("已把链接还原为：" + normalizedUrl
                         + "。如果解析失败，请在作品页用“分享 → 复制链接”重新获取链接。");
+            } else if (douyinVideoInfo != null) {
+                statusLabel.setText("解析完成：yt-dlp 无法解析该抖音链接，已改用浏览器兜底解析（"
+                        + douyinVideoInfo.formats().size()
+                        + " 个可下载源）。请选择清晰度，或直接加入队列。");
             } else if (imagePostInfo != null) {
                 long liveCount = imagePostInfo.images().stream().filter(ImageInfo::hasLivePhoto).count();
                 statusLabel.setText("解析完成：这是一条图文作品，共 " + imagePostInfo.imageCount()
@@ -352,6 +367,27 @@ final class DownloadPane {
         loadThumbnail(images.isEmpty() ? null : images.get(0).url());
     }
 
+    /**
+     * Douyin fallback videos reuse the format table, so the layout stays identical to the yt-dlp flow. The
+     * page only exposes playable addresses, so the rows carry no resolution or codec details.
+     */
+    private void showDouyinVideoInfo(DouyinVideoInfo info) {
+        titleLabel.setText("标题：" + UiFormatters.unknownIfBlank(info.title()));
+        uploaderLabel.setText("作者：" + UiFormatters.unknownIfBlank(info.author()));
+        durationLabel.setText("类型：抖音视频（浏览器兜底解析）");
+        List<FormatInfo> rows = new java.util.ArrayList<>();
+        for (DouyinVideoFormat format : info.formats()) {
+            rows.add(new FormatInfo(format.id(), format.extension(), "视频", "已包含",
+                    null, null, null, format.note()));
+        }
+        douyinFormats = info.formats();
+        formatTable.getItems().setAll(rows);
+        if (!rows.isEmpty()) {
+            formatTable.getSelectionModel().selectFirst();
+        }
+        loadThumbnail(info.thumbnailUrl());
+    }
+
     private void loadThumbnail(String thumbnailUrl) {
         if (thumbnailUrl == null || thumbnailUrl.isBlank()) {
             thumbnailView.setImage(null);
@@ -366,12 +402,17 @@ final class DownloadPane {
     }
 
     private void startDownload() {
-        if (validatedUrl == null || (videoInfo == null && imagePostInfo == null)) {
+        if (validatedUrl == null
+                || (videoInfo == null && imagePostInfo == null && douyinVideoInfo == null)) {
             statusLabel.setText("请先解析作品链接。");
             return;
         }
         AppConfig config = context.config();
         try {
+            if (douyinVideoInfo != null) {
+                startDouyinFallbackDownload(config);
+                return;
+            }
             if (imagePostInfo != null) {
                 Path folderBase = context.pathSecurity()
                         .resolveUniqueBaseName(config.downloadDirectory(), imagePostInfo.title());
@@ -413,6 +454,44 @@ final class DownloadPane {
         } catch (StorageException | IllegalArgumentException exception) {
             statusLabel.setText("无法开始下载：" + exception.getMessage());
         }
+    }
+
+    private void startDouyinFallbackDownload(AppConfig config) throws StorageException {
+        int index = formatTable.getSelectionModel().getSelectedIndex();
+        if (index < 0 || index >= douyinFormats.size()) {
+            statusLabel.setText("请先选择要下载的视频源。");
+            return;
+        }
+        String title = douyinVideoInfo.title() == null || douyinVideoInfo.title().isBlank()
+                ? "douyin-" + douyinVideoInfo.postId()
+                : douyinVideoInfo.title();
+        Path baseName = context.pathSecurity()
+                .resolveUniqueBaseName(config.downloadDirectory(), title);
+        DouyinVideoRequest request = new DouyinVideoRequest(
+                validatedUrl,
+                douyinVideoInfo.postId(),
+                baseName.getFileName().toString(),
+                douyinFormats.get(index),
+                config.downloadDirectory(),
+                config.cookieFile());
+        DownloadTask task = context.downloadQueue().addDouyinVideoTask(request);
+        context.downloadQueue().start(task.id());
+        refreshTasks();
+        statusLabel.setText("已加入下载队列：" + task.fileName() + "（浏览器兜底解析）");
+    }
+
+    /**
+     * The resolution column shows "仅音频" only for audio-only streams; a fallback video row has no
+     * resolution information at all.
+     */
+    private static String resolutionText(FormatInfo format) {
+        if (format.height() != null) {
+            return format.height() + "p";
+        }
+        String videoCodec = format.videoCodec();
+        return videoCodec == null || videoCodec.isBlank() || videoCodec.equalsIgnoreCase("none")
+                ? "仅音频"
+                : "未知";
     }
 
     /** Video-only formats are combined with the best audio stream so FFmpeg can merge them. */
@@ -499,7 +578,7 @@ final class DownloadPane {
         boolean hasOutput = hasSelection && selected.outputFile() != null;
         openFileButton.setDisable(!hasOutput);
         copyPathButton.setDisable(!hasOutput);
-        downloadButton.setDisable(videoInfo == null && imagePostInfo == null);
+        downloadButton.setDisable(videoInfo == null && imagePostInfo == null && douyinVideoInfo == null);
     }
 
     private void openFile(Path file) {

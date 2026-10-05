@@ -44,6 +44,22 @@ The application does not implement DRM bypass, authentication bypass, paywall by
 - Live photo motion videos (动图) are handled by the same rules: the play address must be on the media CDN
   allowlist (`douyinvod.com` included), and the video is fetched only for the post the user pasted.
 
+## Douyin video fallback (浏览器兜底)
+
+- The fallback exists because Douyin answers unsigned API requests with HTTP 403. It renders the public
+  video page once in a local headless Edge/Chrome and reads the playable addresses the page already contains.
+- No signature is calculated, no verification challenge is solved and no access restriction is bypassed: the
+  fallback reads exactly the page a user can open in their own browser, for the single link they pasted.
+- The browser always runs with a throw-away profile directory (`--user-data-dir` inside the system temporary
+  directory) that is deleted afterwards. The user's browser profile, history and cookie database are never
+  read, copied or uploaded; the optional cookie file is not passed to the browser at all.
+- The dumped markup is untrusted input. Only media URLs on the CDN allowlist are kept, and the same allowlist
+  is checked again before the download starts, so a manipulated page cannot redirect the download to another
+  host.
+- The media file is written through a temporary `.part` file inside the configured download directory,
+  existing files are skipped (resume behaviour), and one file is limited to 8 GB.
+- Only one video is resolved per link; account pages, playlists and bulk collection remain out of scope.
+
 ## Local data and repository hygiene
 
 - The application writes configuration to `%APPDATA%/NZSK/VideoDownloader/config.json` (download directory, tool

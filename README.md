@@ -154,6 +154,13 @@ Image posts need cookies as well, because the platform web API answers an anonym
 page. Configure the exported cookie file (browser based reading does not work for Edge and Chrome 127+ because
 of app-bound encryption) and keep "从浏览器读取 Cookie" set to "(不使用)".
 
+When yt-dlp cannot read a Douyin **video** (Douyin rejects unsigned API requests with HTTP 403, and the
+yt-dlp extractor reports that fresh cookies are needed), the application falls back to rendering the public
+page once in a local headless Edge or Chrome and downloads the playable address of that page. The browser runs
+with a throw-away profile directory; your own browser data is never touched. This fallback is slower (about 20
+seconds) and needs Edge or Chrome installed, so the paste-and-download flow stays the same but the format list
+of a fallback video only shows the sources the page exposes.
+
 ## Application icon
 
 The icon is generated from a single source image. The optional design master is `tubiao.png` in the project

@@ -36,6 +36,7 @@ VideoDownloaderApplication (JavaFX entry point)
     ├── DefaultUrlValidator + HttpRedirectResolver
     ├── DefaultYtDlpClient -> CommandBuilder / ProgressParser / DownloadOutputParser
     ├── DefaultImagePostClient -> DouyinImagePostParser / NetscapeCookieStore
+    ├── DefaultDouyinVideoClient -> DouyinVideoPageParser / BrowserLocator
     ├── DownloadQueue (concurrency gate, retry, pause/resume/cancel)
     ├── JsonConfigManager (AppConfig persistence)
     └── DefaultLocalFileService (open file or directory with the desktop shell)
@@ -55,8 +56,9 @@ pause, cancel and retry:
 
 ```text
 DownloadJob
-├── VideoDownloadJob     -> YtDlpClient (yt-dlp process)
-└── ImagePostDownloadJob -> ImagePostClient (HTTP images of one post)
+├── VideoDownloadJob       -> YtDlpClient (yt-dlp process)
+├── ImagePostDownloadJob   -> ImagePostClient (HTTP images of one post)
+└── DouyinVideoDownloadJob -> DouyinVideoClient (browser fallback, HTTP media file)
 ```
 
 `DownloadTask` therefore carries a kind, a display name, a one line summary (format selector or "图集 N 张"),
@@ -65,6 +67,14 @@ the state, progress and the produced output path.
 Image posts are inspected through the platform web detail API by `DefaultImagePostClient`, parsed by
 `DouyinImagePostParser` and downloaded one by one. `NetscapeCookieStore` builds the Cookie header for the
 platform host only; values are never logged.
+
+Douyin rejects plain API requests that its own JavaScript has not signed, which is why yt-dlp reports that
+fresh cookies are needed. When a Douyin video fails there, `DefaultDouyinVideoClient` renders the public page
+once with a local headless Edge/Chrome (throw-away profile directory), `DouyinVideoPageParser` reads the
+playable addresses out of the returned markup, and `DouyinVideoDownloadJob` downloads the chosen address over
+HTTP. No signature is computed and no verification challenge is solved; the fallback only reads the page a
+user could open themselves. The parser treats the markup as untrusted input and keeps only URLs on the media
+CDN allowlist.
 
 yt-dlp JSON is parsed by `YtDlpJsonParser` into immutable `VideoInfo` and `FormatInfo` records. The parser has no network or process responsibilities.
 
@@ -84,5 +94,7 @@ directory, and appends only validated configuration values (`--limit-rate`, `--p
 ## Configuration and paths
 
 `AppPaths` resolves bundled tools, the configuration file, the log directory and the default download
-directory without hard-coding machine specific paths. `LogManager` creates the log directory and hands out
-loggers; log files never contain cookie values or full command lines.
+directory without hard-coding machine specific paths. A tool path from the configuration is kept while that
+file exists and otherwise replaced by the tool discovered next to the running application, so a removed or
+renamed installation directory does not leave the application without yt-dlp or FFmpeg. `LogManager` creates
+the log directory and hands out loggers; log files never contain cookie values or full command lines.

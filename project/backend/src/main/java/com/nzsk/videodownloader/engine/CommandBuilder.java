@@ -2,6 +2,7 @@ package com.nzsk.videodownloader.engine;
 
 import com.nzsk.videodownloader.model.DownloadOptions;
 import com.nzsk.videodownloader.model.DownloadRequest;
+import com.nzsk.videodownloader.service.ProgressParser;
 import com.nzsk.videodownloader.util.FileNameSanitizer;
 
 import java.nio.file.Path;
@@ -14,9 +15,18 @@ import java.util.Objects;
  * interpretation is possible.
  */
 public final class CommandBuilder {
+    /**
+     * The marker has to be part of the template text: yt-dlp reads the segment before the first colon
+     * ("download:") as the template type selector and never prints it.
+     *
+     * <p>The {@code _str} variants are yt-dlp's own human readable values ("4.88MiB/s", "00:03"), so the
+     * queue shows the same figures as the command line instead of raw byte counts.</p>
+     */
     private static final String PROGRESS_TEMPLATE =
-            "download:%(progress._percent_str)s|%(progress.downloaded_bytes)s"
-                    + "|%(progress.speed)s|%(progress.eta)s";
+            "download:" + ProgressParser.PROGRESS_MARKER
+                    + "%(progress._percent_str)s"
+                    + "|%(progress._downloaded_bytes_str)s/%(progress._total_bytes_str)s"
+                    + "|%(progress._speed_str)s|%(progress._eta_str)s";
     private static final int MAX_BASE_NAME_LENGTH = 120;
 
     private CommandBuilder() {

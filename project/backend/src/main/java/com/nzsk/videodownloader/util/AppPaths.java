@@ -65,6 +65,17 @@ public final class AppPaths {
                 .toAbsolutePath().normalize();
     }
 
+    /**
+     * Keeps a tool path from the configuration while that file still exists and otherwise falls back to the
+     * tool discovered next to the running application.
+     *
+     * <p>The user configuration outlives an installation, so an absolute path written by an earlier copy of
+     * the application would otherwise keep pointing at a directory that no longer exists.</p>
+     */
+    public static Path preferredToolPath(Path configured, Path discovered) {
+        return configured != null && Files.isRegularFile(configured) ? configured : discovered;
+    }
+
     public static Path ytDlpPath() {
         return bundledTool(YT_DLP_EXE);
     }

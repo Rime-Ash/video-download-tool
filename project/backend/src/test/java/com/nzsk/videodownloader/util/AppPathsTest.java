@@ -46,4 +46,22 @@ class AppPathsTest {
         assertTrue(config.defaultFormatSelector().contains("bestvideo"));
         assertTrue(config.maxConcurrentDownloads() >= 1);
     }
+
+    @Test
+    void keepsConfiguredToolWhileTheFileExists() throws Exception {
+        Path configured = Files.createFile(
+                Files.createTempDirectory("video-downloader-paths").resolve("yt-dlp.exe"));
+        Path discovered = Path.of("tools", "yt-dlp.exe");
+
+        assertEquals(configured, AppPaths.preferredToolPath(configured, discovered));
+    }
+
+    @Test
+    void fallsBackToTheDiscoveredToolWhenTheConfiguredPathIsStale() {
+        Path discovered = Path.of("tools", "yt-dlp.exe");
+
+        assertEquals(discovered,
+                AppPaths.preferredToolPath(Path.of("removed-app", "tools", "yt-dlp.exe"), discovered));
+        assertEquals(discovered, AppPaths.preferredToolPath(null, discovered));
+    }
 }

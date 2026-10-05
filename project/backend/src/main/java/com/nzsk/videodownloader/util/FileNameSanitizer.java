@@ -33,7 +33,23 @@ public final class FileNameSanitizer {
         if (isReservedDeviceName(sanitized)) {
             sanitized = "_" + sanitized;
         }
-        return sanitized.substring(0, Math.min(sanitized.length(), maxLength));
+        String truncated = truncate(sanitized, maxLength).strip();
+        return truncated.isBlank() ? "download" : truncated;
+    }
+
+    /**
+     * Truncates without splitting a surrogate pair. A lone half cannot be encoded in a Windows file name, so
+     * a title that ends in an emoji at exactly the length limit would otherwise fail the whole download.
+     */
+    private static String truncate(String value, int maxLength) {
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        int end = maxLength;
+        if (Character.isHighSurrogate(value.charAt(end - 1))) {
+            end--;
+        }
+        return value.substring(0, end);
     }
 
     /** Removes a trailing media extension so a title can be used as a base name. */

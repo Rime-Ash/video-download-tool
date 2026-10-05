@@ -5,6 +5,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-05
+
 ### Changed
 
 - The compliance statement is no longer a startup confirmation dialog. It is shown permanently in the

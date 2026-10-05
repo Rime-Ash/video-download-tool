@@ -79,11 +79,11 @@ if ($LASTEXITCODE -ne 0) {
 $packageArguments = @(
     '--type', 'app-image',
     '--name', 'VideoDownloader',
-    '--app-version', '0.1.0',
+    '--app-version', '0.1.1',
     '--vendor', 'NZSK',
     '--description', 'Compliant personal video downloader',
     '--input', $inputDirectory,
-    '--main-jar', 'lib\frontend-0.1.0.jar',
+    '--main-jar', 'lib\frontend-0.1.1.jar',
     '--main-class', 'com.nzsk.videodownloader.ui.VideoDownloaderLauncher',
     '--runtime-image', $runtimeDirectory,
     '--dest', $outputDirectory

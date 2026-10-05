@@ -14,7 +14,7 @@
 param(
     [string]$OutputDirectory = 'D:\Download',
     [string]$IsccPath = 'C:\tools\Inno\ISCC.exe',
-    [string]$AppVersion = '0.1.0',
+    [string]$AppVersion = '0.1.1',
     [switch]$SkipAppImage
 )
 

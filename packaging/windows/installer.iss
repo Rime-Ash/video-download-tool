@@ -9,7 +9,7 @@
 ;   3. 自动生成卸载程序（控制面板"应用和功能"中可见，安装目录下为 unins000.exe）。
 
 #ifndef MyAppVersion
-  #define MyAppVersion "0.1.0"
+  #define MyAppVersion "0.1.1"
 #endif
 
 #ifndef OutputDir
